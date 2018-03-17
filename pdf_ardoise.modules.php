@@ -7,6 +7,7 @@
  * Copyright (C) 2012      Cedric Salvador      <csalvador@gpcsolutions.fr>
  * Copyright (C) 2015      Marcos García        <marcosgdf@gmail.com>
  * Copyright (C) 2017      Ferran Marcet        <fmarcet@2byte.es>
+ * Copyright (C) 2018      Thierry Nancy       <thierry.nancyt@tagestech.be>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +25,7 @@
  */
 
 /**
- *	\file       htdocs/core/modules/propale/doc/pdf_azur.modules.php
+ *	\file       htdocs/core/modules/propale/doc/pdf_ardoise.modules.php
  *	\ingroup    propale
  *	\brief      Fichier de la classe permettant de generer les propales au modele Azur
  */
@@ -36,9 +37,9 @@ require_once DOL_DOCUMENT_ROOT.'/core/lib/pdf.lib.php';
 
 
 /**
- *	Class to generate PDF proposal Azur
+*	Class to generate PDF proposal Ardoise
  */
-class pdf_azur extends ModelePDFPropales
+class pdf_ardoise extends ModelePDFPropales
 {
 	var $db;
 	var $name;
@@ -72,7 +73,7 @@ class pdf_azur extends ModelePDFPropales
 		$langs->load("bills");
 
 		$this->db = $db;
-		$this->name = "azur";
+		$this->name = "ardoise";
 		$this->description = $langs->trans('DocModelAzurDescription');
 
 		// Dimension page pour format A4
