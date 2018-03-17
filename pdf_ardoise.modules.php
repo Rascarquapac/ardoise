@@ -24,7 +24,7 @@
  */
 
 /**
- *	\file       htdocs/core/modules/propale/doc/pdf_ardoise.modules.php
+ *	\file       htdocs/core/modules/propale/doc/pdf_azur.modules.php
  *	\ingroup    propale
  *	\brief      Fichier de la classe permettant de generer les propales au modele Azur
  */
@@ -36,9 +36,9 @@ require_once DOL_DOCUMENT_ROOT.'/core/lib/pdf.lib.php';
 
 
 /**
- *	Class to generate PDF proposal Ardoise
+ *	Class to generate PDF proposal Azur
  */
-class pdf_ardoise extends ModelePDFPropales
+class pdf_azur extends ModelePDFPropales
 {
 	var $db;
 	var $name;
@@ -58,6 +58,7 @@ class pdf_ardoise extends ModelePDFPropales
 
 	var $emetteur;	// Objet societe qui emet
 
+
 	/**
 	 *	Constructor
 	 *
@@ -71,7 +72,7 @@ class pdf_ardoise extends ModelePDFPropales
 		$langs->load("bills");
 
 		$this->db = $db;
-		$this->name = "ardoise";
+		$this->name = "azur";
 		$this->description = $langs->trans('DocModelAzurDescription');
 
 		// Dimension page pour format A4
@@ -93,18 +94,16 @@ class pdf_ardoise extends ModelePDFPropales
 		$this->option_multilang = 1;               // Dispo en plusieurs langues
 		$this->option_escompte = 0;                // Affiche si il y a eu escompte
 		$this->option_credit_note = 0;             // Support credit notes
-		$this->option_freetext = 1;				  // Support add of a personalised text
-		$this->option_draft_watermark = 1;		  //Support add of a watermark on drafts
+		$this->option_freetext = 1;				   // Support add of a personalised text
+		$this->option_draft_watermark = 1;		   //Support add of a watermark on drafts
 
 		$this->franchise=!$mysoc->tva_assuj;
 
 		// Get source company
 		$this->emetteur=$mysoc;
 		if (empty($this->emetteur->country_code)) $this->emetteur->country_code=substr($langs->defaultlang,-2);    // By default, if was not defined
-		
+
 		// Define position of columns
-		//Begin TN proposal
-		/* Deleting previous posx intitialisation
 		$this->posxdesc=$this->marge_gauche+1;
 		if($conf->global->PRODUCT_USE_UNITS)
 		{
@@ -121,15 +120,8 @@ class pdf_ardoise extends ModelePDFPropales
 		}
 		$this->posxdiscount=162;
 		$this->postotalht=174;
-		
-		
-		if (   ! empty($conf->global->MAIN_GENERATE_DOCUMENTS_WITHOUT_VAT) 
-		    || ! empty($conf->global->MAIN_GENERATE_DOCUMENTS_WITHOUT_VAT_COLUMN))
-		{
-		        $this->posxtva=$this->posxup;
-		        $this->posxpicture=$this->posxtva - 
-		          (empty($conf->global->MAIN_DOCUMENTS_WITH_PICTURE_WIDTH)?20:$conf->global->MAIN_DOCUMENTS_WITH_PICTURE_WIDTH);	// width of images
-		}
+		if (! empty($conf->global->MAIN_GENERATE_DOCUMENTS_WITHOUT_VAT) || ! empty($conf->global->MAIN_GENERATE_DOCUMENTS_WITHOUT_VAT_COLUMN)) $this->posxtva=$this->posxup;
+		$this->posxpicture=$this->posxtva - (empty($conf->global->MAIN_DOCUMENTS_WITH_PICTURE_WIDTH)?20:$conf->global->MAIN_DOCUMENTS_WITH_PICTURE_WIDTH);	// width of images
 		if ($this->page_largeur < 210) // To work with US executive format
 		{
 			$this->posxpicture-=20;
@@ -140,123 +132,22 @@ class pdf_ardoise extends ModelePDFPropales
 			$this->posxdiscount-=20;
 			$this->postotalht-=20;
 		}
-        */
-		//End TN proposal
-		// Initiliaze working variables
+
 		$this->tva=array();
 		$this->localtax1=array();
 		$this->localtax2=array();
 		$this->atleastoneratenotnull=0;
 		$this->atleastonediscount=0;
 	}
-	//Begin TN proposal
-	/**
-	 *  Function to build X positions of columns
-	 *
-	 *  @param       Boolean		$no_tvacol		TRUE when not TVA column wished
-	 *  @param       Boolean		$no_units		TRUE when not product unit wished
-	 *  @param       Boolean		$no_discount		TRUE when not discount detected
-	 *  TN proposal
-	 */
-	function update_xpositions($no_tvacol, $no_units, $no_discount, $no_picture)
-	{
-	    // output columns width, for position of colums,
-	    $this->width_descrip  = 108; //82 remaining
-	    $this->width_tva      = 10;  //72 remaining
-	    $this->width_up       = 16;  //56 remaining
-	    $this->width_qty      = 14;  //42 remaining
-	    $this->width_unit     = 10;  //32 remaining
-	    $this->width_discount = 12;  //20 remain
-	    $this->width_totalht  = 20;  //0 remaining
-	    $this->width_picture  = (empty($conf->global->MAIN_DOCUMENTS_WITH_PICTURE_WIDTH)?20:$conf->global->MAIN_DOCUMENTS_WITH_PICTURE_WIDTH);
-	    // X positions from right ot left
-	    if ($no_tvacol)   $this->width_tva      = 0;
-	    if ($no_units)    $this->width_unit     = 0;
-	    if ($no_discount) $this->width_discount = 0;
-	    if ($no_picture)  $this->width_picture  = 0;
-	    $this->postotalht   = $this->page_largeur - $this->marge_droite - $this->width_totalht;
-	    $this->posxdiscount = $this->postotalht   - $this->width_discount;
-	    $this->posxunit     = $this->posxdiscount - $this->width_unit;
-	    $this->posxqty      = $this->posxunit     - $this->width_qty;
-	    $this->posxup       = $this->posxqty      - $this->width_up;
-	    $this->posxtva      = $this->posxup       - $this->width_tva;
-	    $this->posxpicture  = $this->posxtva      - $this->width_picture;
-	    
-	    $this->posxdesc=$this->marge_gauche+1;
-	}
-    //End TN proposal
-    //Begin TN proposal
-	/**
-	 *  Function to build the path array of pictures when they exist in lines
-	 *  @param        Object
-	 *  @return       Array		$realpatharray     NULL or list of images paths
-	 *  TN proposal
-	 */
-	function get_realpatharray($object)	
-	{
-        	$realpatharray=array();
-    	    $objphoto = new Product($this->db);
-    	    
-    	    for ($i = 0 ; $i < $nblignes ; $i++)
-    	    {
-    	        if (empty($object->lines[$i]->fk_product)) continue;
-    	        
-    	        $objphoto->fetch($object->lines[$i]->fk_product);
-    	        //var_dump($objphoto->ref);exit;
-    	        if (! empty($conf->global->PRODUCT_USE_OLD_PATH_FOR_PHOTO))
-    	        {
-    	            $pdir[0] = get_exdir($objphoto->id,2,0,0,$objphoto,'product') . $objphoto->id ."/photos/";
-    	            $pdir[1] = get_exdir(0,0,0,0,$objphoto,'product') . dol_sanitizeFileName($objphoto->ref).'/';
-    	        }
-    	        else
-    	        {
-    	            $pdir[0] = get_exdir(0,0,0,0,$objphoto,'product') . dol_sanitizeFileName($objphoto->ref).'/';				// default
-    	            $pdir[1] = get_exdir($objphoto->id,2,0,0,$objphoto,'product') . $objphoto->id ."/photos/";	// alternative
-    	        }
-    	        
-    	        $arephoto = false;
-    	        foreach ($pdir as $midir)
-    	        {
-    	            if (! $arephoto)
-    	            {
-    	                $dir = $conf->product->dir_output.'/'.$midir;
-    	                
-    	                foreach ($objphoto->liste_photos($dir,1) as $key => $obj)
-    	                {
-    	                    if (empty($conf->global->CAT_HIGH_QUALITY_IMAGES))		// If CAT_HIGH_QUALITY_IMAGES not defined, we use thumb if defined and then original photo
-    	                    {
-    	                        if ($obj['photo_vignette'])
-    	                        {
-    	                            $filename= $obj['photo_vignette'];
-    	                        }
-    	                        else
-    	                        {
-    	                            $filename=$obj['photo'];
-    	                        }
-    	                    }
-    	                    else
-    	                    {
-    	                        $filename=$obj['photo'];
-    	                    }
-    	                    
-    	                    $realpath = $dir.$filename;
-    	                    $arephoto = true;
-    	                }
-    	            }
-    	        }       	        
-    	        if ($realpath && $arephoto) $realpatharray[$i]=$realpath;
-        	}
-        	return ($realpatharray);
-	}
-	//End TN proposal
+
 	/**
      *  Function to build pdf onto disk
      *
-     *  @param		Object		$object		    Object to generate
+     *  @param		Object		$object				Object to generate
      *  @param		Translate	$outputlangs		Lang output object
      *  @param		string		$srctemplatepath	Full path of source filename for generator using a template file
      *  @param		int			$hidedetails		Do not show line details
-     *  @param		int			$hidedesc		Do not show desc
+     *  @param		int			$hidedesc			Do not show desc
      *  @param		int			$hideref			Do not show ref
      *  @return     int             				1=OK, 0=KO
 	 */
@@ -276,16 +167,67 @@ class pdf_ardoise extends ModelePDFPropales
 		$outputlangs->load("products");
 
 		$nblignes = count($object->lines);
-		
-		//Begin TN proposal
-		if (empty($conf->global->MAIN_GENERATE_PROPOSALS_WITH_PICTURE))
-		    $realpatharray=array();
-		else 
-		    $realpatharray = $this->get_realpatharray($object);
-		//End TN proposal 
-		//Begin TN proposal
-		//if (count($realpatharray) == 0) $this->posxpicture=$this->posxtva;
-        //End TN proposal
+
+		// Loop on each lines to detect if there is at least one image to show
+		$realpatharray=array();
+		if (! empty($conf->global->MAIN_GENERATE_PROPOSALS_WITH_PICTURE))
+		{
+			$objphoto = new Product($this->db);
+
+			for ($i = 0 ; $i < $nblignes ; $i++)
+			{
+				if (empty($object->lines[$i]->fk_product)) continue;
+
+				$objphoto->fetch($object->lines[$i]->fk_product);
+                //var_dump($objphoto->ref);exit;
+				if (! empty($conf->global->PRODUCT_USE_OLD_PATH_FOR_PHOTO))
+				{
+					$pdir[0] = get_exdir($objphoto->id,2,0,0,$objphoto,'product') . $objphoto->id ."/photos/";
+					$pdir[1] = get_exdir(0,0,0,0,$objphoto,'product') . dol_sanitizeFileName($objphoto->ref).'/';
+				}
+				else
+				{
+					$pdir[0] = get_exdir(0,0,0,0,$objphoto,'product') . dol_sanitizeFileName($objphoto->ref).'/';				// default
+					$pdir[1] = get_exdir($objphoto->id,2,0,0,$objphoto,'product') . $objphoto->id ."/photos/";	// alternative
+				}
+
+				$arephoto = false;
+				foreach ($pdir as $midir)
+				{
+					if (! $arephoto)
+					{
+						$dir = $conf->product->dir_output.'/'.$midir;
+
+						foreach ($objphoto->liste_photos($dir,1) as $key => $obj)
+						{
+							if (empty($conf->global->CAT_HIGH_QUALITY_IMAGES))		// If CAT_HIGH_QUALITY_IMAGES not defined, we use thumb if defined and then original photo
+							{
+								if ($obj['photo_vignette'])
+								{
+									$filename= $obj['photo_vignette'];
+								}
+								else
+								{
+									$filename=$obj['photo'];
+								}
+							}
+							else
+							{
+								$filename=$obj['photo'];
+							}
+
+							$realpath = $dir.$filename;
+							$arephoto = true;
+						}
+					}
+				}
+
+				if ($realpath && $arephoto) $realpatharray[$i]=$realpath;
+			}
+		}
+
+		if (count($realpatharray) == 0) $this->posxpicture=$this->posxtva;
+
 		if ($conf->propal->dir_output)
 		{
 			$object->fetch_thirdparty();
@@ -348,17 +290,7 @@ class pdf_ardoise extends ModelePDFPropales
 				$pdf->Open();
 				$pagenb=0;
 				$pdf->SetDrawColor(128,128,128);
-				//Begin TN proposal for lists and break spacing
-				$tagvs = array('p'  => array(0 => array('h' => 0.0001, 'n' => 1), 1 => array('h' => 0.0001, 'n' => 1)),
-				    'br' => array(0 => array('h' => 0.0001, 'n' => 1), 1 => array('h' => 0.0001, 'n' => 1)),
-				    'ul' => array(0 => array('h' => 0.0001, 'n' => 1), 1 => array('h' => 0.0001, 'n' => 1)),
-				    'ol' => array(0 => array('h' => 0.0001, 'n' => 1), 1 => array('h' => 0.0001, 'n' => 1))
-				);
-				$pdf->setHtmlVSpace($tagvs);
-				//List indent size
-				$pdf->setListIndentWidth(6);
-				//End TN proposal
-				
+
 				$pdf->SetTitle($outputlangs->convToOutputCharset($object->ref));
 				$pdf->SetSubject($outputlangs->transnoentities("CommercialProposal"));
 				$pdf->SetCreator("Dolibarr ".DOL_VERSION);
@@ -376,13 +308,8 @@ class pdf_ardoise extends ModelePDFPropales
 						$this->atleastonediscount++;
 					}
 				}
-				//Begin TN proposal
-				/* Dolibarr 6.0.5
 				if (empty($this->atleastonediscount) && empty($conf->global->PRODUCT_USE_UNITS))
 				{
-				    //Si absence totale de discount (ou qu'on doit utiliser les untiés de produit =erreur ?)
-				    // on décale toutes les positions précédentes de 
-				    // "largeur de discount" = $this->postotalht - $this->posxdiscount
 					$this->posxpicture+=($this->postotalht - $this->posxdiscount);
 					$this->posxtva+=($this->postotalht - $this->posxdiscount);
 					$this->posxup+=($this->postotalht - $this->posxdiscount);
@@ -390,16 +317,7 @@ class pdf_ardoise extends ModelePDFPropales
 					$this->posxdiscount+=($this->postotalht - $this->posxdiscount);
 					//$this->postotalht;
 				}
-                */
-				$no_tvacol   =    ! empty($conf->global->MAIN_GENERATE_DOCUMENTS_WITHOUT_VAT)
-				               || ! empty($conf->global->MAIN_GENERATE_DOCUMENTS_WITHOUT_VAT_COLUMN);
-				$no_unit     = empty($conf->global->PRODUCT_USE_UNITS);
-				$no_discount = empty ($this->atleastonediscount);
-				$no_picture  = empty ($realpatharray);
-				
-                $this->update_xpositions($no_tvacol, $no_units, $no_discount,$no_picture);
-                //End TN proposal
-                
+
 				// New page
 				$pdf->AddPage();
 				if (! empty($tplidx)) $pdf->useTemplate($tplidx);
@@ -752,33 +670,6 @@ class pdf_ardoise extends ModelePDFPropales
 
 				// Pied de page
 				$this->_pagefoot($pdf,$object,$outputlangs);
-				
-				//Begin TN proposal:  Par Philippe SAGOT (philazerty)
-				// Ajout des CGV dans la propale - Add Conditions and Terms in documents
-				
-				if ($conf->global->MAIN_MULTILANGS) {
-				    $cgv_pdf=DOL_DATA_ROOT."/mycompany/cgv/".$outputlangs->defaultlang."/cgv.pdf";
-				}else{
-				    $cgv_pdf=DOL_DATA_ROOT."/mycompany/cgv/cgv.pdf";
-				}
-				if (file_exists($cgv_pdf)){
-				    $pagecount = $pdf->setSourceFile($cgv_pdf);
-				    for ($i = 1; $i <= $pagecount; $i++) {
-				        $tplidx = $pdf->ImportPage($i);
-				        $s = $pdf->getTemplatesize($tplidx);
-				        $pdf->AddPage('P', array($s['w'], $s['h']));
-				        $pdf->useTemplate($tplidx);
-				        // Ajout du watermark (brouillon)
-				        if ($object->statut==0 && (!empty($conf->global->FACTURE_DRAFT_WATERMARK))) {
-				            pdf_watermark($pdf,$outputlangs,$this->page_hauteur,$this->page_largeur,'mm',$conf->global->FACTURE_DRAFT_WATERMARK);
-				            $pdf->SetTextColor(0,0,60);
-				        }
-				        // Ajout du footer / pied de page
-				        pdf_pagefoot($pdf,$outputlangs,'',$this->emetteur,$this->marge_basse,$this->marge_gauche,$this->page_hauteur,$object);
-				    }
-				}
-				////Begin TN proposal
-							
 				if (method_exists($pdf,'AliasNbPages')) $pdf->AliasNbPages();
 
 				//If propal merge product PDF is active
@@ -1080,7 +971,7 @@ class pdf_ardoise extends ModelePDFPropales
 	/**
 	 *	Show total to pay
 	 *
-	 *	@param	PDF     	    $pdf            Object PDF
+	 *	@param	PDF			$pdf            Object PDF
 	 *	@param  Facture		$object         Object invoice
 	 *	@param  int			$deja_regle     Montant deja regle
 	 *	@param	int			$posy			Position depart
@@ -1450,10 +1341,8 @@ class pdf_ardoise extends ModelePDFPropales
 			$pdf->line($this->posxunit - 1, $tab_top, $this->posxunit - 1, $tab_top + $tab_height);
 			if (empty($hidetop)) {
 				$pdf->SetXY($this->posxunit - 1, $tab_top + 1);
-				//Begin TN Proposal
-				//$pdf->MultiCell($this->posxdiscount - $this->posxunit - 1, 2, $outputlangs->transnoentities("Unit"), '','C');
-				$pdf->MultiCell($this->posxdiscount - $this->posxunit , 2, $outputlangs->transnoentities("Unit"), '','C');
-				//End TN proposal
+				$pdf->MultiCell($this->posxdiscount - $this->posxunit - 1, 2, $outputlangs->transnoentities("Unit"), '',
+					'C');
 			}
 		}
 
@@ -1473,19 +1362,16 @@ class pdf_ardoise extends ModelePDFPropales
 		if (empty($hidetop))
 		{
 			$pdf->SetXY($this->postotalht-1, $tab_top+1);
-			//Begin TN proposal
-			//$pdf->MultiCell(30,2, $outputlangs->transnoentities("TotalHT"),'','C');
-			$pdf->MultiCell($this->width_totalht,2, $outputlangs->transnoentities("TotalHT"),'','C');
-			//End TN proposal
+			$pdf->MultiCell(30,2, $outputlangs->transnoentities("TotalHT"),'','C');
 		}
 	}
 
 	/**
 	 *  Show top header of page.
 	 *
-	 *  @param	PDF	    $pdf        Object PDF
+	 *  @param	PDF			$pdf     		Object PDF
 	 *  @param  Object		$object     	Object to show
-	 *  @param  int	    	    $showaddress    0=no, 1=yes
+	 *  @param  int	    	$showaddress    0=no, 1=yes
 	 *  @param  Translate	$outputlangs	Object lang for output
 	 *  @return	void
 	 */
